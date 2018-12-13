@@ -8,8 +8,7 @@ from utils import Logger
 
 DATA_FOLDER = './torch_data/VGAN/MNIST'
 
-
-# Loading Data
+# Loading Data and normalizing it
 def mnist_data():
     compose = transforms.Compose(
         [transforms.ToTensor(),
@@ -19,11 +18,13 @@ def mnist_data():
     return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
 
 
-# Load data
+# Load data and normalize it
 data = mnist_data()
+
 # Create loader with data, so that we can iterate over it
 data_loader = torch.utils.data.DataLoader(data, batch_size=100, shuffle=True)
-# Num batches
+
+# Num batches: 60,000 images in MNIST, thus num_batches = 60000/batch_size
 num_batches = len(data_loader)
 
 
@@ -135,7 +136,7 @@ loss = nn.BCELoss()
 # Number of steps to apply to the discriminator
 d_steps = 1  # In Goodfellow et. al 2014 this variable is assigned to 1
 # Number of epochs
-num_epochs = 200
+num_epochs = 75
 
 
 def real_data_target(size):
@@ -202,6 +203,10 @@ test_noise = noise(num_test_samples)
 # Start Training
 logger = Logger(model_name='VGAN', data_name='MNIST')
 
+# Open a file for logging Data
+file_outdir = '{}/VGAN_log.txt'.format(DATA_FOLDER)
+flog = open(file_outdir, "w+")
+
 for epoch in range(num_epochs):
     for n_batch, (real_batch,_) in enumerate(data_loader):
 
@@ -232,7 +237,8 @@ for epoch in range(num_epochs):
             # Display status Logs
             logger.display_status(
                 epoch, num_epochs, n_batch, num_batches,
-                d_error, g_error, d_pred_real, d_pred_fake
+                d_error, g_error, d_pred_real, d_pred_fake, flog
             )
+
         # Model Checkpoints
         logger.save_models(generator, discriminator, epoch)
